@@ -2,6 +2,8 @@ import discord
 import re
 import urllib.parse
 import os
+from flask import Flask    # NOWY IMPORT
+import threading           # NOWY IMPORT
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -203,6 +205,26 @@ async def on_message(message):
                 f"❌ Błąd konwersji: Wykryłem link, ale nie udało się z niego poprawnie odczytać ID przedmiotu."
             )
 
+# ----------------------------------------------------
+# NOWA SEKCJA: Minimalny Serwer Flask dla Rendera
+# ----------------------------------------------------
+app = Flask(__name__)
 
+@app.route('/')
+def home():
+    # Render używa tego, aby sprawdzić, czy port jest otwarty
+    return "Discord Bot Running - OK"
+
+def run_flask_server():
+    # Użyj portu dostarczonego przez Render (lub 5000 jako fallback)
+    port = os.environ.get('PORT', 5000)
+    print(f"DIAGNOZA: Uruchamianie serwera Flask na porcie {port}...")
+    # Wyłączamy w Flasku reloader, żeby uniknąć podwójnego uruchamiania
+    app.run(host='0.0.0.0', port=port, use_reloader=False)
+
+# Uruchom serwer Flask w oddzielnym wątku (aby bot Discorda mógł działać)
+flask_thread = threading.Thread(target=run_flask_server)
+flask_thread.start()
+# ----------------------------------------------------
 
 client.run(DISCORD_TOKEN)
