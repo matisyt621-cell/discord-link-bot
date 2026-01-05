@@ -2,8 +2,9 @@ import discord
 import re
 import urllib.parse
 import os
-from flask import Flask    # NOWY IMPORT
-import threading           # NOWY IMPORT
+import asyncio  # DODANE: Wymagane do funkcji oczekiwania (sleep)
+from flask import Flask
+import threading
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -21,9 +22,14 @@ OFFER_SOURCE_URL_PATTERN = "https://detail.1688.com/offer/{}.html"
 KAKAOBUY_URL_PATTERN = "https://www.kakobuy.com/item/details?url={ENCODED_SOURCE_URL}&affcode=Matisek"
 QC_URL_PATTERN = "https://findqc.com/detail/{SOURCE_CODE}/{ID}"
 
+# --------------------------
+# AKTUALIZACJA INTENTÓW
+# --------------------------
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True # DODANE: Wymagane dla on_member_join
 client = discord.Client(intents=intents)
+# --------------------------
 
 
 def fully_unquote(text):
@@ -170,6 +176,38 @@ def konwertuj_linki(text):
 async def on_ready():
     print(f'Zalogowano jako {client.user}!')
 
+# ------------------------------------
+# NOWA FUNKCJA POWITALNA (on_member_join)
+# ------------------------------------
+# ID kanałów, na których ma pojawić się powitanie.
+# Grupa ID serwera to 1440822254437928990 (niepotrzebna do kodu, tylko ID kanałów są wymagane)
+WELCOME_CHANNEL_IDS = [1457134422712123392, 1457134318152323270] 
+
+@client.event
+async def on_member_join(member):
+    # Szukamy kanału powitalnego w serwerze, do którego dołączył użytkownik
+    for target_id in WELCOME_CHANNEL_IDS:
+        channel = member.guild.get_channel(target_id)
+        
+        if channel:
+            # member.mention taguje nowego użytkownika
+            welcome_message_content = f"Witamy na serwerze, {member.mention}! Pamiętaj, aby zapoznać się z regulaminem."
+            
+            try:
+                # Wysyłamy wiadomość
+                sent_message = await channel.send(welcome_message_content)
+                print(f"DIAGNOZA: Wysłano powitanie do {member.name} na kanale {channel.name}.")
+                
+                # Czekamy 3 sekundy
+                await asyncio.sleep(3)
+                
+                # Usuwamy wiadomość
+                await sent_message.delete()
+                print(f"DIAGNOZA: Usunięto wiadomość powitalną.")
+            except discord.Forbidden:
+                print(f"BŁĄD: Nie mam uprawnień do wysłania/usunięcia wiadomości na kanale {channel.name}.")
+# ------------------------------------
+
 
 @client.event
 async def on_message(message):
@@ -206,25 +244,23 @@ async def on_message(message):
             )
 
 # ----------------------------------------------------
-# NOWA SEKCJA: Minimalny Serwer Flask dla Rendera
+# SEKCJA: Minimalny Serwer Flask dla Rendera (PRZED RUN)
 # ----------------------------------------------------
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    # Render używa tego, aby sprawdzić, czy port jest otwarty
     return "Discord Bot Running - OK"
 
 def run_flask_server():
-    # Użyj portu dostarczonego przez Render (lub 5000 jako fallback)
     port = os.environ.get('PORT', 5000)
     print(f"DIAGNOZA: Uruchamianie serwera Flask na porcie {port}...")
-    # Wyłączamy w Flasku reloader, żeby uniknąć podwójnego uruchamiania
     app.run(host='0.0.0.0', port=port, use_reloader=False)
 
-# Uruchom serwer Flask w oddzielnym wątku (aby bot Discorda mógł działać)
+# Uruchom serwer Flask w oddzielnym wątku
 flask_thread = threading.Thread(target=run_flask_server)
 flask_thread.start()
 # ----------------------------------------------------
+
 
 client.run(DISCORD_TOKEN)
