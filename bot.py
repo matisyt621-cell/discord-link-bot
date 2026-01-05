@@ -1,6 +1,7 @@
 import discord
 import re
 import urllib.parse
+import os
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -201,6 +202,7 @@ async def on_message(message):
             await message.reply(
                 f"❌ Błąd konwersji: Wykryłem link, ale nie udało się z niego poprawnie odczytać ID przedmiotu."
             )
+
 
 
 client.run(DISCORD_TOKEN)
