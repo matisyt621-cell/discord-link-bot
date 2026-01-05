@@ -2,7 +2,7 @@ import discord
 import re
 import urllib.parse
 
-DISCORD_TOKEN = "MTQ1NzM4MzA1MjcwMjY1MDUwOQ.Gq8Q2O.0YFVu5-IqSfq8sTZEaRAtuGI-B8JUoo8hXDJD4"
+DISCORD_TOKEN = "MTQ1NzM4MzA1MjcwMjY1MDUwOQ.GdWsWC._EX1wysCne6eWRpzl7S3uGmvrhxQiKxu1FKHkE"
 
 # --- WZORCE DLA AGENTÓW (które nie są standardowymi URLami) ---
 KAKAOBUY_SIMPLE_ITEM_ID_REGEX = r"goods\.php\?id=(\d+)"
@@ -201,6 +201,7 @@ async def on_message(message):
             await message.reply(
                 f"❌ Błąd konwersji: Wykryłem link, ale nie udało się z niego poprawnie odczytać ID przedmiotu."
             )
+
 
 
 client.run(DISCORD_TOKEN)
